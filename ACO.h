@@ -3,13 +3,23 @@
 #include "Graph.h"
 #include <set>
 
-class ACO {
+enum class AlgType {
+    elitism,
+    acs
+};
 
+enum class EndCondition {
+    maxIterations,
+    afterPercentageOfOptimal,
+    all
+};
+
+class ACO {
 public:
 	ACO(int numIterations_, double alpha_, double beta_, 
 		double rho_, double epsilon_,
-		double tao_, double q_, std::string algType_,
-		std::string endCondition_, std::string filepath_);
+		double tao_, double q_, AlgType algType_,
+		EndCondition endCondition_, double endPercent_, std::string filepath_);
 
 private:
 	void run();
@@ -18,15 +28,16 @@ private:
 	double alpha;
 	double beta;
 	double rho;
-	int elitism;
 	double epsilon;
 	double tao;
 	double q;
-	std::string algType;
-	std::string endCondition;
+	AlgType algType;
+	EndCondition endCondition;
+    double endPercent;
 	std::string filepath;
-	std::set<int> notVisited;
 	Graph graph;
+
+    std::set<int> notVisited;
 
 	double getProbDenominator(int curr);
 	double getProbNumerator(int curr, int dest);

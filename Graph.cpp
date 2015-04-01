@@ -4,11 +4,35 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
+
+std::unordered_map<std::string, double> Graph::optimalTours {
+    {"d2103.tsp", 80450},
+    {"u2152.tsp", 64253},
+    {"u2319.tsp", 234256},
+    {"pr2392.tsp", 378032},
+    {"pcb3038.tsp", 137694},
+    {"fl3795.tsp", 28772},
+    {"fnl4461.tsp", 182566},
+    {"rl5915.tsp", 565530},
+    {"rl5934.tsp", 556045},
+    {"pla7397.tsp", 23260728},
+    {"rl11849.tsp", 923288},
+    {"pla85900.tsp", 142382641}
+};
 
 Graph::Graph(std::string filename)
 { 
     std::fstream file(filename);
     std::stringstream ss;
+
+    try {
+        optimalTourWeight = Graph::optimalTours.at(filename);         
+        std::cout << "Optimal tour weight: " << optimalTourWeight << std::endl;
+    } catch (const std::out_of_range& oor) {
+        optimalTourWeight = 0;
+        std::cout << "Optimal tour weight not recorded." << std::endl;
+    }
 
     if (file.is_open()) {
         std::string line;
@@ -35,7 +59,6 @@ Graph::Graph(std::string filename)
                        line.substr(0,20).compare("DISPLAY_DATA_SECTION") == 0) {
                 for (int i = 0; i < numNodes; i++) {
                     getline(file, line);
-                    std::cout << "Getting Line" << std::endl;
                     ss.clear();
                     ss.str("");
                     ss << line;
@@ -45,7 +68,6 @@ Graph::Graph(std::string filename)
                     double xCoord, yCoord;
                     ss >> xCoord;
                     ss >> yCoord;
-                    std::cout << "(" << xCoord << "," << yCoord << ")" << std::endl;
                     coords[i].first = xCoord;
                     coords[i].second = yCoord;
                     for (int j = 0; j < i; j++) {
