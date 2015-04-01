@@ -7,7 +7,7 @@ class ACO {
 
 public:
 	ACO(int numIterations_, double alpha_, double beta_, 
-		double rho_, int elitism_, double epsilon_,
+		double rho_, double epsilon_,
 		double tao_, double q_, std::string algType_,
 		std::string endCondition_, std::string filepath_);
 

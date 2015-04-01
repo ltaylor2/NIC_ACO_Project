@@ -6,11 +6,11 @@
 #include <iostream>
 
 ACO::ACO(int numIterations_, double alpha_, double beta_, 
-		double rho_, int elitism_, double epsilon_,
+		double rho_, double epsilon_,
 		double tao_, double q_, std::string algType_,
 		std::string endCondition_, std::string filepath_)
 	: numIterations(numIterations_), alpha(alpha_), beta(beta_),
-	  rho(rho_), elitism(elitism_), epsilon(epsilon_),
+	  rho(rho_), epsilon(epsilon_),
 	  tao(tao_), q(q_), algType(algType_), endCondition(endCondition_),
 	  graph(filepath_)
 {
@@ -19,17 +19,22 @@ ACO::ACO(int numIterations_, double alpha_, double beta_,
 
 void ACO::run() {
 	int numAnts = graph.getNumNodes();
-
-	graph.initPheromone();
+	
+	//TODO get elitism out of the constructor
+	elitism = numAnts;
 
 	std::vector<std::vector<int>> ants(numAnts, std::vector<int>(graph.getNumNodes(), 0));
-	// initialize all the pheromone levels to 0
+	std::vector<int> bestTour(graph.getNumNodes(), 0);
+	double bestTourWeight = std::numeric_limits<double>::max();
 
+	// initialize all the pheromone levels to 0
 	// run through the algorithm
+
+	//******************************ELISTIST************************
+	//keep track of all the ants tour weights for elistist updates from each ant
+	std::vector<double> tourWeights(numAnts, std::numeric_limits<double>::max());
+
 	for (int n = 0; n < numIterations; n++) {
-		// evey ant for every iteration
-		double bestTourWeight = std::numeric_limits<double>::max();
-		int bestAnt = 0;
 
 		for (int i = 0; i < numAnts; i++) {
 			double currTourWeight = 0;
@@ -40,7 +45,9 @@ void ACO::run() {
 			}
 
 			// pick a first city and mark it as visited
-			ants[i][0] = rand() % graph.getNumNodes();
+			ants[i][0] = (int)rand() % graph.getNumNodes();
+
+
 			notVisited.erase(ants[i][0]);
 
 			// assemble the ant's tour under ACO rules
@@ -50,12 +57,13 @@ void ACO::run() {
 
 				// find the min/max city, and pick it with prob q;
 				double random = static_cast<double>(rand()) / RAND_MAX;
-				if (random < q) {
-					int minMaxNode = getMinMaxNode(ants[i][j]);
-					ants[i][j + 1] = minMaxNode;
-					notVisited.erase(minMaxNode);
-					destPicked = true;
-				}
+				//8************************ACO*************************************
+				// if (random < q) {
+				// 	int minMaxNode = getMinMaxNode(ants[i][j]);
+				// 	ants[i][j + 1] = minMaxNode;
+				// 	destPicked = true;
+				// }
+
 				if (!destPicked) {
 					// otherwise, find the next city according to ant system
 					double denominator = getProbDenominator(ants[i][j]);
@@ -68,52 +76,59 @@ void ACO::run() {
 						
 						if (random <= prob + missed) {
 							ants[i][j + 1] = *it;
-							notVisited.erase(*it);
 							destPicked = true;
 							break;
 						}
 						missed += prob;
-					}	
+					}
 				}
+
 				if (!destPicked) {
 					ants[i][j + 1] = *(notVisited.rbegin());
 				}
 
+				notVisited.erase(ants[i][j+1]);
+
 				currTourWeight += graph.getWeight(ants[i][j], ants[i][j + 1]);
 
+				//***********************ACS************************************
 				// now that we've picked the edge for this section of the tour,
 				// wear away pheromone according to ACO rules
-				double acoPheromoneLevel = (graph.getPheromone(ants[i][j], ants[i][j+1]) * (1-epsilon)) + (epsilon * tao);
-				if (acoPheromoneLevel < 0.0)
-					acoPheromoneLevel = 0.0;
-				else if (acoPheromoneLevel > 1.0)
-					acoPheromoneLevel = 1.0;
+				//double acoPheromoneLevel = (graph.getPheromone(ants[i][j], ants[i][j+1]) * (1-epsilon)) + (epsilon * tao);
 
-				graph.setPheromone(ants[i][j], ants[i][j + 1], acoPheromoneLevel);
-
-			//	std::cout << "From: " << ants[i][j] << " to: " << ants[i][j+1] << std::endl;
+				//graph.setPheromone(ants[i][j], ants[i][j + 1], acoPheromoneLevel);
 			}
 
-			// set the last leg of the tour
-			double acoPheromoneLevel = (graph.getPheromone(ants[i][graph.getNumNodes() - 1], ants[i][0]) * (1-epsilon)) + (epsilon * tao);
-			if (acoPheromoneLevel < 0.0)
-				acoPheromoneLevel = 0.0;
-			else if (acoPheromoneLevel > 1.0)
-					acoPheromoneLevel = 1.0;
+			// *****************************ACS***********************************
+			// double acoPheromoneLevel = (graph.getPheromone(ants[i][graph.getNumNodes() - 1], ants[i][0]) * (1-epsilon)) + (epsilon * tao);
 			
-			graph.setPheromone(ants[i][graph.getNumNodes() - 1], ants[i][0], acoPheromoneLevel);
+			// graph.setPheromone(ants[i][graph.getNumNodes() - 1], ants[i][0], acoPheromoneLevel);
 
+			// set the last leg of the tour
 			currTourWeight += graph.getWeight(ants[i][graph.getNumNodes() - 1], ants[i][0]);
 			
-			//std::cout << "CurrTour:" << currTourWeight << std::endl;
+			tourWeights[i] = currTourWeight;
 
 			if (currTourWeight < bestTourWeight) {
 				bestTourWeight = currTourWeight;
-				bestAnt = i;
+				bestTour.swap(ants[i]);
 			}
 		}
 
-		// now that all the tours are assembled, plant new pheromone levels according to ACO rules
+		// now that all the tours are assembled
+
+		//********************ELITISM************************
+		// run through all ant tours and update elitism ant summation based on their tour lengths
+		for (unsigned int i = 0; i < tourWeights.size(); i++) {
+			for (int l = 0; l < graph.getNumNodes(); l++) {
+				int dest = l + 1;
+				if (dest == graph.getNumNodes())
+					dest = ants[i][0];
+				graph.setPheromone(ants[i][l], ants[i][dest],
+								   graph.getPheromone(ants[i][l], ants[i][dest]) + (1 / tourWeights[i]));
+			}
+		}
+
 		// for all tours, change by (1 - rho)*tao
 		for (int c = 0; c < graph.getNumNodes(); c++) {
 			for (int d = 0; d < graph.getNumNodes(); d++) {
@@ -121,14 +136,21 @@ void ACO::run() {
 			}
 		}
 
-		// then add pheromone to edges found in the best tour
+		// then add pheromone to edges found in the best tour found so far
+		//ACS CHANGED FROM L TO L+1!!!
 		for (int l = 0; l < graph.getNumNodes(); l++) {
-			int dest = l;
-			if (l == graph.getNumNodes())
-				dest = ants[bestAnt][0];
-			graph.setPheromone(ants[bestAnt][l], ants[bestAnt][dest], 
-							   graph.getPheromone(ants[bestAnt][l], ants[bestAnt][dest]) + (rho * (1 / bestTourWeight)));
+			int dest = l + 1;
+			if (dest == graph.getNumNodes())
+				dest = bestTour[0];
+			//**********************************ACS**************************
+			// graph.setPheromone(bestTour[l], bestTour[dest], 
+			// 				   graph.getPheromone(bestTour[l], bestTour[dest]) + (rho * (1 / bestTourWeight)));
+		
+			//******************************ELITISM******************************8
+			graph.setPheromone(bestTour[l], bestTour[dest], 
+				graph.getPheromone(bestTour[l], bestTour[dest]) + (elitism * (1 / bestTourWeight)));
 		}
+
 
 		std::cout << "Iteration: " << n << "  Best Tour Length: " << bestTourWeight << std::endl;
 
@@ -139,7 +161,7 @@ double ACO::getProbDenominator(int curr) {
 	double sum = 0.0;
 	//std::cout << "# cities remaining: " << notVisited.size() << std::endl;
 	for (auto it = notVisited.begin(); it != notVisited.end(); it++) {
-		sum += pow(graph.getPheromone(curr, *it), alpha)*pow(graph.getWeight(curr, *it), beta);
+		sum += pow(graph.getPheromone(curr, *it), alpha)*pow(1 / graph.getWeight(curr, *it), beta);
 	}
 
 	return sum;
@@ -148,18 +170,19 @@ double ACO::getProbDenominator(int curr) {
 double ACO::getProbNumerator(int curr, int dest)
 {
 	return pow(graph.getPheromone(curr, dest), alpha) * 
-	       pow(graph.getWeight(curr, dest), beta);
+	       pow(1 / graph.getWeight(curr, dest), beta);
 }
 
 int ACO::getMinMaxNode(int curr)
 {
 	int minMaxDest = 0;
-	int minMaxFactor = 0;
+	double minMaxFactor = 0;
 	for (auto it = notVisited.begin(); it != notVisited.end(); it++) {
-		int factor = graph.getPheromone(curr, *it) *
-					 pow(graph.getWeight(curr, *it), beta);
+		double factor = graph.getPheromone(curr, *it) *
+					 pow(1 / graph.getWeight(curr, *it), beta);
 
 		if (factor > minMaxFactor) {
+			//std::cout << "factor = " << factor << std::endl;
 			minMaxDest = *it;
 			minMaxFactor = factor;
 		}

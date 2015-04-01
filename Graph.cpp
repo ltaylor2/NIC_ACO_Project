@@ -31,10 +31,11 @@ Graph::Graph(std::string filename)
                 for (int i = 0; i < numNodes; i++)
                     table[i] = new std::pair<double, double>[numNodes];
                 coords = new std::pair<double, double>[numNodes];
-            } else if (line.compare("NODE_COORD_SECTION") == 0 ||
-                       line.compare("DISPLAY_DATA_SECTION") == 0) {
+            } else if (line.substr(0,18).compare("NODE_COORD_SECTION") == 0 ||
+                       line.substr(0,20).compare("DISPLAY_DATA_SECTION") == 0) {
                 for (int i = 0; i < numNodes; i++) {
                     getline(file, line);
+                    std::cout << "Getting Line" << std::endl;
                     ss.clear();
                     ss.str("");
                     ss << line;
@@ -44,6 +45,7 @@ Graph::Graph(std::string filename)
                     double xCoord, yCoord;
                     ss >> xCoord;
                     ss >> yCoord;
+                    std::cout << "(" << xCoord << "," << yCoord << ")" << std::endl;
                     coords[i].first = xCoord;
                     coords[i].second = yCoord;
                     for (int j = 0; j < i; j++) {
@@ -52,6 +54,8 @@ Graph::Graph(std::string filename)
                         double weight = sqrt(xCoordDiff*xCoordDiff + yCoordDiff*yCoordDiff);
                         table[j][index].first = weight;
                         table[index][j].first = weight;
+                        table[j][index].second = 1;
+                        table[index][j].second = 1;
                     }
                 }
             }
@@ -67,14 +71,6 @@ Graph::Graph(std::string filename)
     //         std::cout << std::endl;
     //     }
     // }
-}
-void Graph::initPheromone()
-{
-    for (int i = 0; i < numNodes; i++) {
-        for (int j = 0; j < numNodes; j++) {
-            setPheromone(i, j, 1);
-        }
-    }
 }
 
 Graph::~Graph()
