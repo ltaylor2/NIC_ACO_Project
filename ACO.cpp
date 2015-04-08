@@ -152,7 +152,7 @@ void ACO::run() {
             if (currTourWeight < bestTourWeight) {
                 bestTourWeight = currTourWeight;
                 for (int b = 0; b < graph.getNumNodes(); b++)
-                    bestTour[b] = ants [i][b];
+                    bestTour[b] = ants[i][b];
             }
             
             if (endCondition == EndCondition::afterPercentageOfOptimal || endCondition == EndCondition::all) {
@@ -162,7 +162,8 @@ void ACO::run() {
         }
 
         // now that all the tours are assembled
-        
+        allBestTourWeights.push_back(bestTourWeight / optimum);
+
         // run through all ant tours and update elitism ant summation based on their tour lengths
         if (algType == AlgType::elitism) {
             for (unsigned int i = 0; i < tourWeights.size(); i++) {

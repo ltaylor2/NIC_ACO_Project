@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     int elitismFactor = numAnts;
 	EndCondition endCondition = EndCondition::time;
     double endPercent = 1.05;
-    double maxTime = 600;
+    double maxTime = 900;
     
     if (argc != 5) {
         std::cout << "USAGE fileName algorithm [ACS | EAS] alpha beta" << std::endl;
@@ -40,12 +40,22 @@ int main(int argc, char** argv)
     double beta = atof(argv[4]);
 
     std::ofstream file;
-    file.open("ACO_tests.csv", std::ofstream::out);
+    file.open("Median_Tests.csv", std::ofstream::out);
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
         ACO aco(numIterations, numAnts, alpha, beta, rho, epsilon, q,
                 elitismFactor, alg, endCondition, endPercent, maxTime, fileName);
-        file << algorithm << "," << alpha << "," << beta << "," << aco.getBestTourPercentage() << std::endl;
+
+        file << fileName << "," << algorithm << "," << alpha << "," << beta << ",";
+
+        std::vector<double> weights = *aco.getAllBestWeights();
+
+        for (unsigned int j = 0; j < weights.size(); j++) {
+            file << weights[j] << ",";
+        }
+
+        file << std::endl;
+
         std::cout << "ACO run finished! Best Tour Percentage: " << aco.getBestTourPercentage() << std::endl;
     }
 

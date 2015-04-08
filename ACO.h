@@ -2,6 +2,7 @@
 
 #include "Graph.h"
 #include <set>
+#include <vector>
 
 enum class AlgType {
     elitism,
@@ -27,6 +28,7 @@ public:
 
 	double getBestTourWeight() { return bestTourWeight; }
 	double getBestTourPercentage() { return bestTourWeight / graph.getOptimum(); }
+	std::vector<double>* getAllBestWeights() { return &allBestTourWeights; }
 
 private:
 	void run();
@@ -51,6 +53,8 @@ private:
     std::set<int> notVisited;
 
     double bestTourWeight;
+
+    std::vector<double> allBestTourWeights;
 
 	double getProbDenominator(int curr);
 	double getProbNumerator(int curr, int dest);
