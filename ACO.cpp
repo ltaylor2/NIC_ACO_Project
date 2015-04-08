@@ -205,7 +205,7 @@ void ACO::run() {
 
         std::clock_t end = std::clock();
         double currTime = (end - start) / (double) CLOCKS_PER_SEC;
-        std::cout << "Iteration: " << n << "  Best Tour Percentage: " << bestTourWeight / optimum << std::endl;
+        std::cout << "Iteration: " << n << "  Best Tour Percentage: " << bestTourWeight / optimum << " Time: " << currTime << std::endl;
         
         if (endCondition == EndCondition::afterPercentageOfOptimal || endCondition == EndCondition::all) {
             if (bestTourWeight / optimum <= endPercent) {
