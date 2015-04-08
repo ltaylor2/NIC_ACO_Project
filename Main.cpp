@@ -39,14 +39,8 @@ int main(int argc, char** argv)
     double alpha = atof(argv[3]);
     double beta = atof(argv[4]);
 
-    std::string csvFileName;
-    csvFileName += alpha;
-    csvFileName += "_";
-    csvFileName += beta;
-    csvFileName += ".csv";
-
     std::ofstream file;
-    file.open(csvFileName, std::ofstream::out);
+    file.open("ACO_tests.csv", std::ofstream::out);
 
     for (int i = 0; i < 3; i++) {
         ACO aco(numIterations, numAnts, alpha, beta, rho, epsilon, q,
