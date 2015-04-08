@@ -8,8 +8,8 @@ public:
     ~Graph();
 
     int getNumNodes() const { return numNodes; }
-    double getWeight(int i, int j) const { return table[i][j].first; }
-    double getPheromone(int i, int j) const { return table[i][j].second; }
+    inline double getWeight(int i, int j) const { return table[i][j].first; }
+    inline double getPheromone(int i, int j) const { return table[i][j].second; }
     void setPheromone(int i, int j, double pheromone) { table[i][j].second = pheromone; }
     double getOptimum() const { return optimalTourWeight; }
 
