@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     int elitismFactor = numAnts;
 	EndCondition endCondition = EndCondition::time;
     double endPercent = 1.05;
-    double maxTime = 900;
+    double maxTime = 600;
     
     if (argc != 5) {
         std::cout << "USAGE fileName algorithm [ACS | EAS] alpha beta" << std::endl;
