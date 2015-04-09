@@ -7,6 +7,15 @@
 #include <ctime>
 #include <time.h>
 
+/*
+ 
+ ****************************
+ *            ACO           *
+ ****************************
+ Daniel Cohen, Josh Imhoff, and Liam Taylor. 2015. CS3445, Bowdoin College.
+ 
+*/
+
 ACO::ACO(int numIterations_, int numAnts_,
         double alpha_, double beta_,
         double rho_, double epsilon_,
@@ -14,7 +23,7 @@ ACO::ACO(int numIterations_, int numAnts_,
         AlgType algType_, EndCondition endCondition_,
         double endPercent_, double maxTime_,
         std::string filepath_)
-    : numIterations(numIterations_), numAnts(numAnts_),
+    : numIterations(numIterations_), numAnts(numAnts_), 
       alpha(alpha_), beta(beta_),
       rho(rho_), epsilon(epsilon_),
       q(q_), elitismFactor(elitismFactor_),
@@ -26,8 +35,8 @@ ACO::ACO(int numIterations_, int numAnts_,
 }
 
 void ACO::run() {
+    // better start timing!
     srand(time(NULL));
-    
     std::clock_t start = std::clock();
 
     tao = 0;
@@ -47,26 +56,35 @@ void ACO::run() {
         }
 
     }    
-
+    
+    // ant is a std::vector<int> that stores cities, representing a tour
     std::vector<std::vector<int>> ants(numAnts, std::vector<int>(graph.getNumNodes(), 0));
+    
+    // best tour is a std::vector<int> that stores cities, best tour found so far
     std::vector<int> bestTour(graph.getNumNodes(), 0);
+    
+    // length of bestTour
     bestTourWeight = std::numeric_limits<double>::max();
 
+    // optimal tour as recorded in document and saved in Graph.cpp
     double optimum = graph.getOptimum();
     
-    // run through the algorithm
-    //keep track of all the ants tour weights for elistist updates from each ant
+    // tourWeights is a vector of weights of current tour per ant used in Elitist ACO
     std::vector<double> tourWeights(numAnts, 0);
 
     int n = 0;
     while (n < numIterations) {
+        
+        // NOTE only update n if stopping condition is maxIterations or all
+        //      otherwise no reason to keep track of iterations
         if (endCondition == EndCondition::maxIterations || endCondition == EndCondition::all)
             n++;
-            
+        
+        // loop over ants
         for (int i = 0; i < numAnts; i++) {
             double currTourWeight = 0;
             
-            // fill the new unvisited node
+			// no city has been visited as of now
             notVisited.clear();
             for (int k = 0; k < graph.getNumNodes(); k++) {
                 notVisited.insert(k);
@@ -104,7 +122,7 @@ void ACO::run() {
                         double prob = getProbNumerator(ants[i][j], *it)/ denominator;
                         
                         // pick cities linearly by adding probability of  previously skipped cities to those
-                        // being picked
+                        // being picked NOTE linear time
                         if (random <= prob + missed) {
                             ants[i][j + 1] = *it;
                             destPicked = true;
@@ -114,8 +132,8 @@ void ACO::run() {
                     }
                 }
                 
-                // if none have been picked from the linear prob. algorithm, pick the last city in the list
-                // (should have been prob == 1 anyways
+                // if none have been picked, pick the last city in the list
+                // NOTE would be result of janky floating point math
                 if (!destPicked) {
                     ants[i][j + 1] = *(notVisited.rbegin());
                 }
@@ -206,8 +224,12 @@ void ACO::run() {
 
         std::clock_t end = std::clock();
         double currTime = (end - start) / (double) CLOCKS_PER_SEC;
+        
+        // print status update
         std::cout << "Iteration: " << n << "  Best Tour Percentage: " << bestTourWeight / optimum << " Time: " << currTime << std::endl;
         
+        // check the current conditions, and end the run if they match
+        // the current end condition specifications
         if (endCondition == EndCondition::afterPercentageOfOptimal || endCondition == EndCondition::all) {
             if (bestTourWeight / optimum <= endPercent) {
                 std::cout << "Percent of optimum achieved." << std::endl;
@@ -224,6 +246,9 @@ void ACO::run() {
     }
 }
 
+// denom only needs be calculated once for ant
+// @param curr -- refers to ant
+// NOTE linear time in size of notVisited set
 double ACO::getProbDenominator(int curr) {
     double sum = 0.0;
     //std::cout << "# cities remaining: " << notVisited.size() << std::endl;
@@ -234,12 +259,19 @@ double ACO::getProbDenominator(int curr) {
     return sum;
 }
 
+// num needs to be calculated once per city in tour
+// @param curr -- refers to ant
+// @param dest -- refers to city being considered
+// NOTE O(1)
 double ACO::getProbNumerator(int curr, int dest)
 {
     return pow(graph.getPheromone(curr, dest), alpha) * 
            pow(1 / graph.getWeight(curr, dest), beta);
 }
 
+// get minMaxNode for ACS
+// @param curr -- refers to ant
+// NOTE linear time in size of notVisited set
 int ACO::getMinMaxNode(int curr)
 {
     int minMaxDest = 0;
@@ -258,6 +290,8 @@ int ACO::getMinMaxNode(int curr)
     return minMaxDest;
 }
 
+// get the nearest neighbor tour to find value
+// of tao in ACS variant
 double ACO::getTourLengthNN()
 {
     double tourLength = 0;
@@ -276,14 +310,12 @@ double ACO::getTourLengthNN()
         double closestWeight = std::numeric_limits<double>::max();
         for (auto it = notVisitedNN.begin(); it != notVisitedNN.end(); it++) {
             double curWeight = graph.getWeight(curNode, *it);
-            //std::cout << curWeight << "/" << closestWeight << std::endl;
             if (curWeight < closestWeight) {
                 closestWeight = curWeight;
                 closestNode = *it;
             }
         }
         tourLength += closestWeight;
-        //nearestNeighborTour.push_back(closestNode);
         notVisitedNN.erase(closestNode);
         curNode = closestNode;
     }

@@ -2,8 +2,23 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include <fstream>
 
+/*
+ 
+ ****************************
+ *          Main            *
+ ****************************
+ This program attempts to fulfill Project 3 for CS3445 at Bowdoin College.
+ Daniel Cohen, Josh Imhoff, and Liam Taylor. 2015.
+ This file includes the main function.
+ 
+*/
+
+// Commandline options:
+// @arg1 fileName (.tsp file) (string)
+// @arg2 algorithm [ACS=Ant Colony System | EAS=Elitist Ant System] (string)
+// @arg3 alpha (double)
+// @arg4 beta (double)
 int main(int argc, char** argv)
 {
     // the majority of the variable for the ACS algorithm are hard-coded here, as this
@@ -19,11 +34,13 @@ int main(int argc, char** argv)
     double endPercent = 1.05;
     double maxTime = 900;
     
+    // check cmd line args
     if (argc != 5) {
         std::cout << "USAGE fileName algorithm [ACS | EAS] alpha beta" << std::endl;
         return -1;
     }
     
+    // set the correct ACO variant
     AlgType alg;
     std::string algorithm(argv[2]);
     if (algorithm == "ACS")
@@ -35,32 +52,17 @@ int main(int argc, char** argv)
         return -1;
     }
     
+    // set the last of the parameters, just to be orderly
     std::string fileName(argv[1]);
     double alpha = atof(argv[3]);
     double beta = atof(argv[4]);
 
-    std::ofstream file;
-    file.open("Median_Tests.csv", std::ofstream::out);
+    // call ACO constructor, runs algs
+    ACO aco(numIterations, numAnts, alpha, beta, rho, epsilon, q,
+            elitismFactor, alg, endCondition, endPercent, maxTime, fileName);
 
-    for (int i = 0; i < 2; i++) {
-        ACO aco(numIterations, numAnts, alpha, beta, rho, epsilon, q,
-                elitismFactor, alg, endCondition, endPercent, maxTime, fileName);
-
-        file << fileName << "," << algorithm << "," << alpha << "," << beta << ",";
-
-        std::vector<double> weights = *aco.getAllBestWeights();
-
-        for (unsigned int j = 0; j < weights.size(); j++) {
-            file << weights[j] << ",";
-        }
-
-        file << std::endl;
-
-        std::cout << "ACO run finished! Best Tour Percentage: " << aco.getBestTourPercentage() << std::endl;
-    }
-
-    file.close();
-
+    // report final output
+    std::cout << "ACO run finished! Best Tour Percentage: " << aco.getBestTourPercentage() << std::endl;
     
     return 0;
 }

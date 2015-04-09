@@ -6,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
+// TSP filename -> optimal tour length
 std::unordered_map<std::string, double> Graph::optimalTours {
     {"d2103.tsp", 80450},
     {"u2152.tsp", 64253},
@@ -21,6 +22,15 @@ std::unordered_map<std::string, double> Graph::optimalTours {
     {"pla85900.tsp", 142382641}
 };
 
+/*
+ 
+ ****************************
+ *          Graph           *
+ ****************************
+ Daniel Cohen, Josh Imhoff, and Liam Taylor. 2015. CS3445, Bowdoin College.
+ 
+*/
+
 Graph::Graph(std::string filename)
 { 
     std::fstream file(filename);
@@ -33,28 +43,37 @@ Graph::Graph(std::string filename)
         optimalTourWeight = 0;
         std::cout << "Optimal tour weight not recorded." << std::endl;
     }
-
+    
+    // 1. Open file
+    // 2. Parse
+    // 3. Calculate weights (euclidean distances)
+    // 4. Fill graph class
     if (file.is_open()) {
         std::string line;
 
         // TODO problems can be represented as weight matrices
         //          - full matrix
         //          - upper triangular portion of matrix
+        // NOTE we do not load in problems in formats listed above
         std::pair<double, double>* coords;
         while (getline(file, line)) {
             ss.clear();
             ss.str("");
             ss << line;
+            
             if (line.substr(0,4).compare("NAME") == 0) {
                 int k = line.find(':');
                 std::string problemName = line.substr(k+2);
+                
             } else if (line.substr(0,9).compare("DIMENSION") == 0) {
                 int k = line.find(':');
                 numNodes = std::stod(line.substr(k+2));
+                
                 table = new std::pair<double, double>*[numNodes];
                 for (int i = 0; i < numNodes; i++)
                     table[i] = new std::pair<double, double>[numNodes];
                 coords = new std::pair<double, double>[numNodes];
+                
             } else if (line.substr(0,18).compare("NODE_COORD_SECTION") == 0 ||
                        line.substr(0,20).compare("DISPLAY_DATA_SECTION") == 0) {
                 for (int i = 0; i < numNodes; i++) {
@@ -62,18 +81,22 @@ Graph::Graph(std::string filename)
                     ss.clear();
                     ss.str("");
                     ss << line;
+                    
                     int index;
                     ss >> index;
                     index--;
+                    
                     double xCoord, yCoord;
                     ss >> xCoord;
                     ss >> yCoord;
                     coords[i].first = xCoord;
                     coords[i].second = yCoord;
+                    
                     for (int j = 0; j < i; j++) {
                         double xCoordDiff = xCoord - coords[j].first;
                         double yCoordDiff = yCoord - coords[j].second;
                         double weight = sqrt(xCoordDiff*xCoordDiff + yCoordDiff*yCoordDiff);
+                        
                         table[j][index].first = weight;
                         table[index][j].first = weight;
                         table[j][index].second = 1;
@@ -84,15 +107,6 @@ Graph::Graph(std::string filename)
         }
         delete[] coords;
     }
-
-    // for (int i = 0; i < numNodes; i++) {
-    //     for (int j = 0; j < numNodes; j++) {
-    //         std::cout << i << " ";
-    //         std::cout << j << " ";
-    //         std::cout << table[i][j].first << " ";
-    //         std::cout << std::endl;
-    //     }
-    // }
 }
 
 Graph::~Graph()
